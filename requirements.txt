@@ -5,3 +5,8 @@ uvicorn==0.35.0
 setuptools
 python-multipart
 paddle
+common
+dual
+tight
+data
+prox
