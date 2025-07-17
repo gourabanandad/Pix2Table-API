@@ -10,3 +10,4 @@ dual
 tight
 data
 prox
+paddlepaddle==2.5.0 -f https://www.paddlepaddle.org.cn/whl/paddlecpu.html
