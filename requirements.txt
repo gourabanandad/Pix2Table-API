@@ -4,4 +4,4 @@ paddleocr==3.1.0
 uvicorn==0.35.0
 setuptools
 python-multipart
-paddlepaddle==2.5.0 -f https://www.paddlepaddle.org.cn/whl/paddlecpu.html
+paddlepaddle==3.0.0 -f https://www.paddlepaddle.org.cn/whl/paddlecpu.html
