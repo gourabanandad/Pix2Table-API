@@ -4,3 +4,4 @@ paddleocr==3.1.0
 uvicorn==0.35.0
 setuptools
 python-multipart
+paddle
