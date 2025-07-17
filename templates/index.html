@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Advanced OCR Table Extractor</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    :root {
+      --primary: #4361ee;
+      --primary-dark: #3a56d4;
+      --secondary: #3f37c9;
+      --success: #4cc9f0;
+      --danger: #f72585;
+      --light: #f8f9fa;
+      --dark: #212529;
+      --gray: #6c757d;
+      --border-radius: 8px;
+      --box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      --transition: all 0.3s ease;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      line-height: 1.6;
+      color: var(--dark);
+      background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+      min-height: 100vh;
+      padding: 2rem;
+    }
+
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+      background: white;
+      padding: 2rem;
+      border-radius: var(--border-radius);
+      box-shadow: var(--box-shadow);
+    }
+
+    h2 {
+      text-align: center;
+      color: var(--primary);
+      margin-bottom: 1.5rem;
+      font-weight: 600;
+    }
+
+    .upload-area {
+      border: 2px dashed var(--gray);
+      border-radius: var(--border-radius);
+      padding: 2rem;
+      text-align: center;
+      margin-bottom: 1.5rem;
+      transition: var(--transition);
+      background: rgba(248, 249, 250, 0.5);
+    }
+
+    .upload-area:hover {
+      border-color: var(--primary);
+      background: rgba(67, 97, 238, 0.05);
+    }
+
+    .upload-area.active {
+      border-color: var(--primary);
+      background: rgba(67, 97, 238, 0.1);
+    }
+
+    .upload-icon {
+      font-size: 3rem;
+      color: var(--primary);
+      margin-bottom: 1rem;
+    }
+
+    .file-input {
+      display: none;
+    }
+
+    .file-label {
+      display: inline-block;
+      padding: 0.75rem 1.5rem;
+      background: var(--primary);
+      color: white;
+      border-radius: var(--border-radius);
+      cursor: pointer;
+      transition: var(--transition);
+      font-weight: 500;
+    }
+
+    .file-label:hover {
+      background: var(--primary-dark);
+      transform: translateY(-2px);
+    }
+
+    .file-name {
+      margin-top: 1rem;
+      font-size: 0.9rem;
+      color: var(--gray);
+    }
+
+    .process-btn {
+      display: block;
+      width: 100%;
+      padding: 0.75rem;
+      background: var(--secondary);
+      color: white;
+      border: none;
+      border-radius: var(--border-radius);
+      font-size: 1rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: var(--transition);
+      margin-top: 1rem;
+    }
+
+    .process-btn:hover {
+      background: var(--primary-dark);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .process-btn:disabled {
+      background: var(--gray);
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
+    .result-area {
+      margin-top: 2rem;
+      display: none;
+    }
+
+    .result-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+    }
+
+    .download-btns {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .download-btn {
+      padding: 0.5rem 1rem;
+      border-radius: var(--border-radius);
+      border: none;
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: var(--transition);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .download-btn.csv {
+      background: #28a745;
+      color: white;
+    }
+
+    .download-btn.json {
+      background: #17a2b8;
+      color: white;
+    }
+
+    .download-btn:hover {
+      opacity: 0.9;
+      transform: translateY(-1px);
+    }
+
+    .table-container {
+      overflow-x: auto;
+      border-radius: var(--border-radius);
+      box-shadow: var(--box-shadow);
+      margin-top: 1rem;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 600px;
+    }
+
+    th, td {
+      padding: 12px 15px;
+      text-align: left;
+      border-bottom: 1px solid #ddd;
+    }
+
+    th {
+      background-color: var(--primary);
+      color: white;
+      font-weight: 500;
+      position: sticky;
+      top: 0;
+    }
+
+    tr:nth-child(even) {
+      background-color: #f2f2f2;
+    }
+
+    tr:hover {
+      background-color: #e9ecef;
+    }
+
+    .status {
+      text-align: center;
+      padding: 1rem;
+      border-radius: var(--border-radius);
+      margin: 1rem 0;
+      font-weight: 500;
+    }
+
+    .loading {
+      background-color: #fff3cd;
+      color: #856404;
+    }
+
+    .error {
+      background-color: #f8d7da;
+      color: #721c24;
+    }
+
+    .success {
+      background-color: #d4edda;
+      color: #155724;
+    }
+
+    .preview-image {
+      max-width: 100%;
+      max-height: 200px;
+      border-radius: var(--border-radius);
+      margin-top: 1rem;
+      box-shadow: var(--box-shadow);
+      display: none;
+    }
+
+    @media (max-width: 768px) {
+      .container {
+        padding: 1rem;
+      }
+      
+      .upload-area {
+        padding: 1.5rem;
+      }
+      
+      .download-btns {
+        flex-direction: column;
+      }
+    }
+
+    /* Animation */
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .spinner {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border: 3px solid rgba(255, 255, 255, 0.3);
+      border-radius: 50%;
+      border-top-color: white;
+      animation: spin 1s ease-in-out infinite;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2><i class="fas fa-table"></i> Advanced OCR Table Extractor</h2>
+    
+    <div class="upload-area" id="uploadArea">
+      <div class="upload-icon">
+        <i class="fas fa-cloud-upload-alt"></i>
+      </div>
+      <h3>Drag & Drop your image here</h3>
+      <p>or</p>
+      <input type="file" id="fileInput" class="file-input" accept=".png,.jpg,.jpeg,.webp" required />
+      <label for="fileInput" class="file-label">
+        <i class="fas fa-folder-open"></i> Select Image
+      </label>
+      <div class="file-name" id="fileName">No file selected</div>
+      <img id="previewImage" class="preview-image" alt="Preview">
+    </div>
+    
+    <button type="button" id="processBtn" class="process-btn" disabled>
+      <span id="btnText">Process Image</span>
+      <span id="btnSpinner" class="spinner" style="display: none;"></span>
+    </button>
+    
+    <div id="statusArea"></div>
+    
+    <div class="result-area" id="resultArea">
+      <div class="result-header">
+        <h3><i class="fas fa-table"></i> Extracted Data</h3>
+        <div class="download-btns">
+          <button class="download-btn csv" id="downloadCsv">
+            <i class="fas fa-file-csv"></i> Download CSV
+          </button>
+          <button class="download-btn json" id="downloadJson">
+            <i class="fas fa-file-code"></i> Download JSON
+          </button>
+        </div>
+      </div>
+      <div class="table-container">
+        <div id="result"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const uploadArea = document.getElementById('uploadArea');
+      const fileInput = document.getElementById('fileInput');
+      const fileName = document.getElementById('fileName');
+      const previewImage = document.getElementById('previewImage');
+      const processBtn = document.getElementById('processBtn');
+      const btnText = document.getElementById('btnText');
+      const btnSpinner = document.getElementById('btnSpinner');
+      const statusArea = document.getElementById('statusArea');
+      const resultArea = document.getElementById('resultArea');
+      const resultDiv = document.getElementById('result');
+      const downloadCsv = document.getElementById('downloadCsv');
+      const downloadJson = document.getElementById('downloadJson');
+      
+      let extractedData = null;
+
+      // Drag and drop functionality
+      ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        uploadArea.addEventListener(eventName, preventDefaults, false);
+      });
+
+      function preventDefaults(e) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+
+      ['dragenter', 'dragover'].forEach(eventName => {
+        uploadArea.addEventListener(eventName, highlight, false);
+      });
+
+      ['dragleave', 'drop'].forEach(eventName => {
+        uploadArea.addEventListener(eventName, unhighlight, false);
+      });
+
+      function highlight() {
+        uploadArea.classList.add('active');
+      }
+
+      function unhighlight() {
+        uploadArea.classList.remove('active');
+      }
+
+      uploadArea.addEventListener('drop', handleDrop, false);
+
+      function handleDrop(e) {
+        const dt = e.dataTransfer;
+        const files = dt.files;
+        if (files.length) {
+          fileInput.files = files;
+          handleFiles(files);
+        }
+      }
+
+      // File input change
+      fileInput.addEventListener('change', () => {
+        if (fileInput.files.length) {
+          handleFiles(fileInput.files);
+        }
+      });
+
+      function handleFiles(files) {
+        const file = files[0];
+        if (!file) return;
+
+        // Check if file is an image
+        if (!file.type.match('image.*')) {
+          showStatus('Please select an image file (PNG, JPG, JPEG)', 'error');
+          processBtn.disabled = true;
+          return;
+        }
+
+        fileName.textContent = file.name;
+        processBtn.disabled = false;
+
+        // Show preview
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          previewImage.src = e.target.result;
+          previewImage.style.display = 'block';
+        };
+        reader.readAsDataURL(file);
+      }
+
+      // Process button click
+      processBtn.addEventListener('click', async () => {
+        const file = fileInput.files[0];
+        if (!file) return;
+
+        // Show loading state
+        btnText.textContent = 'Processing...';
+        btnSpinner.style.display = 'inline-block';
+        processBtn.disabled = true;
+        showStatus('Processing image... This may take a moment depending on the image size.', 'loading');
+        
+        resultArea.style.display = 'none';
+        extractedData = null;
+
+        const formData = new FormData();
+        formData.append('file', file);
+
+        try {
+          const response = await fetch('/process-image', {
+            method: 'POST',
+            body: formData,
+          });
+
+          const data = await response.json();
+          
+          if (data.status === 'success') {
+            showStatus('Table extracted successfully!', 'success');
+            extractedData = data.data;
+            renderTable(extractedData);
+            resultArea.style.display = 'block';
+          } else {
+            showStatus(data.message || 'Failed to extract table data', 'error');
+          }
+        } catch (err) {
+          showStatus('Something went wrong! Please try again.', 'error');
+          console.error(err);
+        } finally {
+          btnText.textContent = 'Process Image';
+          btnSpinner.style.display = 'none';
+          processBtn.disabled = false;
+        }
+      });
+
+      // Download buttons
+      downloadCsv.addEventListener('click', () => {
+        if (!extractedData) return;
+        downloadFile(convertToCsv(extractedData), 'text/csv', 'extracted_data.csv');
+      });
+
+      downloadJson.addEventListener('click', () => {
+        if (!extractedData) return;
+        downloadFile(JSON.stringify(extractedData, null, 2), 'application/json', 'extracted_data.json');
+      });
+
+      // Helper functions
+      function showStatus(message, type) {
+        statusArea.innerHTML = `<div class="status ${type}"><i class="fas fa-${type === 'loading' ? 'spinner fa-pulse' : type === 'error' ? 'exclamation-circle' : 'check-circle'}"></i> ${message}</div>`;
+      }
+
+      function renderTable(data) {
+        if (!Array.isArray(data) || data.length === 0) {
+          resultDiv.innerHTML = '<div class="status error">No data found in the image.</div>';
+          return;
+        }
+
+        let tableHTML = '<table><thead><tr>';
+        Object.keys(data[0]).forEach(key => {
+          tableHTML += `<th>${key}</th>`;
+        });
+        tableHTML += '</tr></thead><tbody>';
+
+        data.forEach(row => {
+          tableHTML += '<tr>';
+          Object.values(row).forEach(value => {
+            tableHTML += `<td>${value}</td>`;
+          });
+          tableHTML += '</tr>';
+        });
+
+        tableHTML += '</tbody></table>';
+        resultDiv.innerHTML = tableHTML;
+      }
+
+      function convertToCsv(data) {
+        if (!Array.isArray(data) || data.length === 0) return '';
+        
+        const headers = Object.keys(data[0]);
+        let csv = headers.join(',') + '\n';
+        
+        data.forEach(row => {
+          const values = headers.map(header => {
+            let value = row[header];
+            // Escape quotes and wrap in quotes if contains commas
+            if (typeof value === 'string' && (value.includes(',') || value.includes('"'))) {
+              value = `"${value.replace(/"/g, '""')}"`;
+            }
+            return value;
+          });
+          csv += values.join(',') + '\n';
+        });
+        
+        return csv;
+      }
+
+      function downloadFile(content, mimeType, filename) {
+        const blob = new Blob([content], { type: mimeType });
+        const url = URL.createObjectURL(blob);
+        
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        
+        setTimeout(() => {
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+        }, 100);
+      }
+    });
+  </script>
+</body>
+</html>
